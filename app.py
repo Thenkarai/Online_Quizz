@@ -25,7 +25,12 @@ else:
 
 @app.template_filter('from_json')
 def from_json_filter(value):
-    return json.loads(value)
+    if value is None or value == "":
+        return []
+    try:
+        return json.loads(value)
+    except (ValueError, TypeError):
+        return []
 
 # --- Database Helpers ---
 
@@ -362,7 +367,8 @@ def setup_db():
             init_db()
             app.db_initialized = True
         except Exception as e:
-            print(f"Failed to initialize DB: {e}")
+            # On serverless (Vercel), log error but don't crash the whole app if possible
+            app.logger.error(f"Failed to initialize DB: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
