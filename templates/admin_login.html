@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - QuizPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</head>
+
+<body>
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative;">
+        <div class="card" style="width: 100%; max-width: 400px; padding: 3rem; border-radius: 24px;">
+            <div style="text-align: center; margin-bottom: 2.5rem;">
+                <div
+                    style="width: 56px; height: 56px; background: rgba(67, 56, 202, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #4338ca;">
+                    <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                        </path>
+                    </svg>
+                </div>
+                <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem; letter-spacing: -0.01em;">Admin
+                    Access</h1>
+                <p class="text-muted">Securely manage your competitions</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}"
+                style="font-size: 0.875rem; padding: 1rem; margin-bottom: 2rem; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2);">
+                {{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="margin-bottom: 0.5rem; display: block;">Username</label>
+                    <input type="text" name="username" required placeholder="admin"
+                        style="width: 100%; padding: 0.875rem 1rem; border-radius: 12px; outline: none; background: var(--surface); color: var(--text-main); border: 1px solid var(--border); transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 2.5rem;">
+                    <label style="margin-bottom: 0.5rem; display: block;">Password</label>
+                    <input type="password" name="password" required placeholder="••••••••"
+                        style="width: 100%; padding: 0.875rem 1rem; border-radius: 12px; outline: none; background: var(--surface); color: var(--text-main); border: 1px solid var(--border); transition: border-color 0.2s;">
+                </div>
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 0.875rem; font-size: 1rem; box-shadow: 0 8px 16px rgba(67, 56, 202, 0.15);">Sign
+                    In</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="{{ url_for('index') }}" class="text-muted"
+                    style="text-decoration: none; font-size: 0.875rem; transition: color 0.2s;">&larr; Back to
+                    Platform</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

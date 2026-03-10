@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} - Interactive Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/anti_cheat.js') }}"></script>
+    <style>
+        .question-card {
+            display: none;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .participation-status {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</head>
+
+<body oncopy="return false" oncut="return false" onpaste="return false" oncontextmenu="return false">
+    <header style="padding: 1rem 0; margin-bottom: 1rem;">
+        <div class="container"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 0 2rem;">
+            <h3>{{ quiz.title }}</h3>
+            <div id="timer-box" class="timer">00:00</div>
+        </div>
+    </header>
+
+    <!-- Top Navigation / Progress -->
+    <nav
+        style="position: sticky; top: 0; background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); z-index: 50; padding: 1rem 0;">
+        <div class="container flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span style="font-weight: 700; color: var(--primary); font-size: 1.25rem;">QuizPro</span>
+                <span style="width: 1px; height: 24px; background: rgba(0, 0, 0, 0.1);"></span>
+                <span class="text-muted" style="font-weight: 500;">{{ quiz.title }}</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <!-- SVG Circular Timer -->
+                <div class="flex items-center gap-3">
+                    <div style="position: relative; width: 40px; height: 40px;">
+                        <svg class="timer-circle" width="40" height="40" viewBox="0 0 40 40">
+                            <!-- Background track -->
+                            <circle cx="20" cy="20" r="16" fill="none" stroke="var(--border)" stroke-width="4"></circle>
+                            <!-- Progress circle -->
+                            <circle class="timer-circle-prog" id="timer-prog-svg" cx="20" cy="20" r="16" fill="none"
+                                stroke="var(--primary-light)" stroke-width="4" stroke-dasharray="100.53"
+                                stroke-dashoffset="0" stroke-linecap="round"></circle>
+                        </svg>
+                        <div id="timer-box"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: inherit; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.75rem; color: var(--text-main);">
+                            00
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div
+            style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: rgba(0, 0, 0, 0.05);">
+            <div id="progress-bar"
+                style="height: 100%; background: var(--primary-light); width: 0%; transition: width 0.3s ease;">
+            </div>
+        </div>
+    </nav>
+
+
+    <main class="container" style="max-width: 800px; margin-top: 4rem; padding-bottom: 6rem;">
+        <div id="quiz-container">
+            {% for q in questions %}
+            <div class="card question-card" id="q-{{ loop.index0 }}" data-qid="{{ q.id }}"
+                data-type="{{ q.question_type }}" style="padding: 3rem; border-radius: 20px;">
+                <div style="margin-bottom: 2rem;">
+                    <span class="badge"
+                        style="background: rgba(67, 56, 202, 0.1); color: var(--primary-light); margin-bottom: 1rem; display: inline-block;">Question
+                        {{ loop.index }} of {{ questions|length }}</span>
+                    <h2 style="font-size: 1.75rem; line-height: 1.3;">{{ q.question_text }}
+                    </h2>
+                </div>
+
+                {% if q.question_type == 'image' %}
+                <div
+                    style="margin: 2rem 0; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);">
+                    <img src="{{ url_for('static', filename=q.image_path) }}" alt="Question Image"
+                        style="width: 100%; height: auto; display: block;">
+                </div>
+                {% endif %}
+
+                <div class="options-container" style="display: grid; gap: 1rem; margin-top: 2.5rem;">
+                    {% if q.question_type in ['mcq', 'image'] %}
+                    {% set opts = q.options|from_json %}
+                    {% for opt in opts %}
+                    <label class="option-label" onclick="selectOption(this, '{{ q.id }}')">
+                        <div class="option-content">
+                            <div class="radio-circle"></div>
+                            <span class="option-text">{{ opt }}</span>
+                        </div>
+                        <input type="radio" name="ans-{{ q.id }}" value="{{ opt }}" style="display: none;">
+                    </label>
+                    {% endfor %}
+                    {% else %}
+                    <div style="position: relative;">
+                        <input type="text" class="fib-answer" placeholder="Type your answer here..."
+                            style="padding: 1.25rem; font-size: 1.125rem; border-width: 2px; width: 100%; background: var(--surface); color: var(--text-main); border-radius: var(--radius-md); outline: none; border-color: var(--border);"
+                            onchange="saveFibAnswer('{{ q.id }}', this.value)">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% endfor %}
+        </div>
+
+        <!-- Footer Controls with Blur Backdrop -->
+        <div class="footer-controls">
+            <div class="container flex justify-between items-center" style="max-width: 800px;">
+                <button class="btn btn-outline" onclick="prevQuestion()" id="prev-btn" style="visibility: hidden;">
+                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                    Previous
+                </button>
+
+                <div id="submit-section" style="display: none;">
+                    <button class="btn btn-primary" onclick="requestFinish()"
+                        style="background: var(--success); padding-left: 2rem; padding-right: 2rem;">
+                        Submit Examination
+                    </button>
+                </div>
+
+                <button class="btn btn-primary" onclick="nextQuestion()" id="next-btn">
+                    Next Question
+                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .options-container {
+            display: grid;
+            gap: 1.25rem;
+            margin-top: 2.5rem;
+        }
+
+        .option-label {
+            display: block;
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .option-content {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .radio-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            margin-right: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .option-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: color 0.3s ease;
+        }
+
+        .option-label:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.02);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.15);
+        }
+
+        .option-label:hover .radio-circle {
+            border-color: var(--primary-light);
+        }
+
+        .option-label.selected {
+            border-color: var(--primary-light);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+            box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.25);
+            transform: scale(1.02);
+        }
+
+        .option-label.selected .radio-circle {
+            border-color: var(--primary-light);
+            border-width: 6px;
+            background: white;
+        }
+
+        .option-label.selected .option-text {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .footer-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(var(--surface-rgb), 0.85);
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid var(--glass-border);
+            padding: 1.5rem 0;
+            z-index: 50;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Security Modal Styles */
+        .security-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            /* Dark blur */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .security-modal {
+            background: var(--surface);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-top: 4px solid var(--danger);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modal-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modal-pop {
+            0% {
+                transform: translateY(20px) scale(0.95);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .security-icon-container {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--danger);
+            animation: pulse-danger 2s infinite;
+        }
+
+        .security-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .security-title {
+            color: var(--danger);
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .security-message {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        @keyframes pulse-danger {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+    </style>
+
+    <!-- Stylish Security Warning Overlay -->
+    <div id="security-overlay" class="security-overlay">
+        <div class="security-modal">
+            <div class="security-icon-container">
+                <svg class="security-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+            </div>
+            <h2 id="security-title" class="security-title">SECURITY WARNING</h2>
+            <p id="violation-msg" class="security-message">Tab switching is not allowed.</p>
+            <div id="security-actions" class="security-actions">
+                <button id="resume-btn" class="btn btn-primary" onclick="resumeQuiz()">I Understand & Resume</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQ = 0;
+        let totalQ = parseInt("{{ questions|length }}");
+        let responses = {};
+        let timePerQuestion = parseInt("{{ quiz.time_per_question }}");
+        let timeLeft = timePerQuestion;
+        let warnings = 0;
+        let quizFinished = false;
+
+        document.getElementById('q-0').classList.add('active');
+
+        // Timer Logic
+        const timerInterval = setInterval(() => {
+            if (quizFinished) return;
+            let mins = Math.floor(timeLeft / 60);
+            let secs = timeLeft % 60;
+            // The format is generic enough for time <= 60s we can just show seconds
+            document.getElementById('timer-box').innerText = `${secs.toString().padStart(2, '0')}`;
+
+            // 2 * pi * r = 2 * 3.14159 * 16 ≈ 100.53 (circumference)
+            const circumference = 100.53;
+            const dashoffset = circumference - (timeLeft / timePerQuestion) * circumference;
+            const svgProg = document.getElementById('timer-prog-svg');
+
+            if (svgProg) {
+                svgProg.style.strokeDashoffset = dashoffset;
+                if (timeLeft <= 10) {
+                    svgProg.style.stroke = "var(--danger)";
+                    document.getElementById('timer-box').style.color = "var(--danger)";
+                } else {
+                    svgProg.style.stroke = "var(--primary-light)";
+                    document.getElementById('timer-box').style.color = "var(--text-main)";
+                }
+            }
+
+            if (timeLeft <= 0) {
+                // Auto-save current answer if any (e.g. FIB)
+                const currentCard = document.getElementById(`q-${currentQ}`);
+                const fibInput = currentCard.querySelector('.fib-answer');
+                if (fibInput && fibInput.value) {
+                    saveFibAnswer(currentCard.dataset.qid, fibInput.value);
+                }
+
+                if (currentQ < totalQ - 1) {
+                    nextQuestion();
+                } else {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                }
+            }
+            timeLeft--;
+        }, 1000);
+
+        function showQuestion(index) {
+            document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`q-${index}`).classList.add('active');
+
+            // Per-question timer reset
+            timeLeft = timePerQuestion;
+
+            // Progress bar update
+            const progress = ((index + 1) / totalQ) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Updated buttons for strict forward-only flow with per-question timer
+            document.getElementById('prev-btn').style.visibility = 'hidden';
+            document.getElementById('next-btn').style.display = (index === totalQ - 1) ? 'none' : 'inline-flex';
+            document.getElementById('submit-section').style.display = (index === totalQ - 1) ? 'inline-block' : 'none';
+        }
+
+        function nextQuestion() {
+            if (currentQ < totalQ - 1) {
+                currentQ++;
+                showQuestion(currentQ);
+            }
+        }
+
+        function selectOption(el, qid) {
+            const val = el.querySelector('input').value;
+            responses[qid] = val;
+
+            // Toggle selected class
+            el.parentElement.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+
+            saveToAPI(qid, val);
+        }
+
+        function saveFibAnswer(qid, val) {
+            responses[qid] = val;
+            saveToAPI(qid, val);
+        }
+
+        function saveToAPI(qid, val) {
+            fetch('/api/submit_answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question_id: qid, answer: val })
+            });
+        }
+
+        function requestFinish() {
+            if (confirm("Are you sure you want to submit the quiz?")) {
+                finishQuiz();
+            }
+        }
+
+        let quizStartTime = Date.now();
+
+        function finishQuiz() {
+            if (quizFinished) return;
+            quizFinished = true;
+            const totalTimeTaken = Math.floor((Date.now() - quizStartTime) / 1000);
+            fetch('/api/finish_quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    time_taken: totalTimeTaken,
+                    warnings: warnings
+                })
+            }).then(() => {
+                window.location.href = '/participant/results';
+            });
+        }
+    </script>
+</body>
+
+</html>

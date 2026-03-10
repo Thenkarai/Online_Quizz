@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - QuizPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div style="margin-bottom: 4rem;">
+            <h2 style="font-size: 1.5rem; color: var(--primary); font-weight: 700; letter-spacing: -0.02em;">QuizPro
+                <span style="font-weight: 300; color: var(--text-muted); font-size: 1.125rem;">Admin</span>
+            </h2>
+        </div>
+        <nav style="flex: 1;">
+            <ul style="list-style: none;">
+                <li style="margin-bottom: 0.75rem;">
+                    <a href="#" class="btn btn-primary"
+                        style="width: 100%; justify-content: flex-start; background: rgba(67, 56, 202, 0.1); color: var(--primary-light); border: 1px solid rgba(67, 56, 202, 0.2); box-shadow: none;">
+                        <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                            </path>
+                        </svg>
+                        Dashboard
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid rgba(0, 0, 0, 0.05);">
+            <a href="{{ url_for('admin_logout') }}" class="flex items-center gap-2"
+                style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem; transition: color 0.2s;">
+                <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding: 4rem 5rem;">
+        <div class="flex justify-between items-end" style="margin-bottom: 4rem;">
+            <div>
+                <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem;">Quizzes</h1>
+                <p style="color: var(--secondary); font-size: 1.125rem;">Manage active assessments and monitor live
+                    results.</p>
+            </div>
+            <a href="{{ url_for('create_quiz') }}" class="btn btn-primary"
+                style="padding: 0.875rem 1.75rem; background: #4338ca; box-shadow: 0 10px 15px -3px rgba(67, 56, 202, 0.3);">
+                <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                New Quiz
+            </a>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 4rem; gap: 2rem;">
+            <div class="card" style="padding: 2rem;">
+                <span
+                    style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Total
+                    Assessments</span>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-top: 0.75rem;">{{
+                    quizzes|length
+                    }}</div>
+            </div>
+            <div class="card" style="padding: 2rem;">
+                <span
+                    style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Active
+                    Participants</span>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-top: 0.75rem;">--</div>
+            </div>
+            <div class="card" style="padding: 2rem;">
+                <span
+                    style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">System
+                    Status</span>
+                <div class="flex items-center gap-3"
+                    style="margin-top: 0.75rem; color: #10b981; font-size: 1.25rem; font-weight: 600;">
+                    <span
+                        style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);"></span>
+                    Operational
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: rgba(0, 0, 0, 0.02); border-bottom: 1px solid var(--border);">
+                    <tr>
+                        <th
+                            style="text-align: left; padding: 1.5rem 2rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+                            Assessment Details</th>
+                        <th
+                            style="text-align: left; padding: 1.5rem 2rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+                            Access Code</th>
+                        <th
+                            style="text-align: left; padding: 1.5rem 2rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+                            Time Limit</th>
+                        <th
+                            style="text-align: right; padding: 1.5rem 2rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quiz in quizzes %}
+                    <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;"
+                        onmouseover="this.style.background='rgba(0,0,0,0.02)'"
+                        onmouseout="this.style.background='transparent'">
+                        <td style="padding: 1.75rem 2rem;">
+                            <div style="font-weight: 600; color: var(--text-main); font-size: 1.125rem;">{{ quiz.title
+                                }}</div>
+                            <div style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.25rem;">{{
+                                quiz.num_questions
+                                }} Professional Questions</div>
+                        </td>
+                        <td style="padding: 1.75rem 2rem;">
+                            <code
+                                style="background: rgba(67, 56, 202, 0.05); padding: 0.5rem 0.875rem; border-radius: 8px; font-weight: 700; color: var(--primary-light); font-family: 'JetBrains Mono', monospace; font-size: 1rem; border: 1px solid rgba(67, 56, 202, 0.1);">{{ quiz.quiz_code }}</code>
+                        </td>
+                        <td style="padding: 1.75rem 2rem; color: var(--secondary); font-weight: 500;">{{ quiz.duration
+                            }} min
+                        </td>
+                        <td style="padding: 1.75rem 2rem; text-align: right;">
+                            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                <a href="{{ url_for('admin_quiz_view', quiz_id=quiz.id) }}" class="btn btn-outline"
+                                    style="padding: 0.625rem; color: var(--secondary);" title="Management Console">
+                                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                        </path>
+                                    </svg>
+                                </a>
+                                <a href="{{ url_for('add_questions', quiz_id=quiz.id) }}" class="btn btn-outline"
+                                    style="padding: 0.625rem; color: var(--secondary);" title="Edit Curriculum">
+                                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                </a>
+                                <button class="btn btn-outline"
+                                    style="padding: 0.625rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);"
+                                    onclick="confirmDelete('{{ quiz.id }}', '{{ quiz.title }}')"
+                                    title="Archive Assessment">
+                                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not quizzes %}
+            <div style="padding: 6rem; text-align: center;">
+                <p style="color: #64748b; font-size: 1.125rem;">No active assessments found. Launch your first
+                    curriculum to begin.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - QuizPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+
+<body>
+    <!-- WWDC Style Ambient Background -->
+    <div class="ambient-bg">
+        <div class="ambient-shape primary"></div>
+        <div class="ambient-shape secondary"></div>
+    </div>
+    <header>
+        <h1>Quiz Competition Results</h1>
+    </header>
+
+    <div class="container animate-fade-in delay-100"
+        style="max-width: 600px; margin-top: 80px; position: relative; z-index: 10;">
+        <div class="card"
+            style="text-align: center; padding: 4rem 2rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); background: var(--surface); box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
+            <div
+                style="width: 100px; height: 100px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);">
+                <span style="transform: translateY(-2px);">🏆</span>
+            </div>
+            <h2
+                style="font-weight: 800; font-size: 2rem; background: var(--text-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+                EXAMINATION COMPLETED</h2>
+            <h3 style="color: var(--text-muted); font-weight: 500; margin-bottom: 2rem; font-size: 1.1rem;">Final
+                Assessment Score</h3>
+
+            <div style="position: relative; display: inline-block; margin: 2rem 0;">
+                <svg viewBox="0 0 36 36" style="width: 200px; height: 200px; transform: rotate(-90deg);">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                        stroke="var(--border)" stroke-width="2" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
+                        stroke="var(--primary)" stroke-width="2"
+                        stroke-dasharray="{{ (results.score / results.total_questions) * 100 }}, 100" />
+                </svg>
+                <div
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <span id="animated-score"
+                        style="font-size: 3.5rem; font-weight: 800; color: var(--text-main);">0</span>
+                    <hr style="border: none; border-top: 2px solid var(--border); margin: 0.2rem auto; width: 40px;">
+                    <span style="font-size: 1.5rem; color: var(--text-muted); font-weight: 600;">{{
+                        results.total_questions }}</span>
+                </div>
+            </div>
+
+            <!-- Hidden inputs for JS confetti and animation -->
+            <input type="hidden" id="raw-score" value="{{ results.score }}">
+            <input type="hidden" id="max-score" value="{{ results.total_questions }}">
+
+            <p style="color: var(--success); font-weight: 600; margin-top: 1rem; font-size: 1.2rem;">
+                Great job! You've successfully finished the quiz.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="{{ url_for('index') }}" class="btn btn-outline animate-fade-in delay-300"
+                style="padding: 1rem 3rem;">Return to Homepage</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawScore = parseInt(document.getElementById('raw-score').value) || 0;
+            const maxScore = parseInt(document.getElementById('max-score').value) || 1;
+            const scoreElement = document.getElementById('animated-score');
+
+            // Animate score from 0 to final
+            let current = 0;
+            const duration = 1500;
+            const stepTime = 20;
+            const steps = duration / stepTime;
+            const increment = rawScore / steps;
+
+            if (rawScore === 0) {
+                scoreElement.textContent = "0";
+                return;
+            }
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= rawScore) {
+                    current = rawScore;
+                    clearInterval(timer);
+
+                    // Fire confetti if score >= 50%
+                    if ((rawScore / maxScore) >= 0.5) {
+                        fireConfetti();
+                    }
+                }
+                scoreElement.textContent = Math.floor(current);
+            }, stepTime);
+
+            function fireConfetti() {
+                var duration = 3 * 1000;
+                var animationEnd = Date.now() + duration;
+                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                var interval = setInterval(function () {
+                    var timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    var particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, {
+                        particleCount,
+                        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                    }));
+                    confetti(Object.assign({}, defaults, {
+                        particleCount,
+                        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                    }));
+                }, 250);
+            }
+        });
+    </script>
+</body>
+
+</html>

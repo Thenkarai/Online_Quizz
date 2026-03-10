@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Questions - QuizPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Add Question to: {{ quiz.title }}</h2>
+            <p>Target Questions: {{ quiz.num_questions }}</p>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Question Type</label>
+                    <select name="question_type" id="q_type" onchange="toggleFields()">
+                        <option value="mcq">Multiple Choice (MCQ)</option>
+                        <option value="fib">Fill in the Blanks</option>
+                        <option value="image">Image Based MCQ</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Question Text</label>
+                    <textarea name="question_text" required rows="3"></textarea>
+                </div>
+
+                <div id="image_upload" class="form-group" style="display: none;">
+                    <label>Upload Image</label>
+                    <input type="file" name="image_file">
+                </div>
+
+                <div id="options_sec">
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <input type="text" name="opt1" placeholder="Option 1">
+                        <input type="text" name="opt2" placeholder="Option 2">
+                        <input type="text" name="opt3" placeholder="Option 3">
+                        <input type="text" name="opt4" placeholder="Option 4">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Correct Answer</label>
+                    <input type="text" name="correct_answer" placeholder="Enter correct option/text" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Question & Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleFields() {
+            const type = document.getElementById('q_type').value;
+            document.getElementById('image_upload').style.display = (type === 'image') ? 'block' : 'none';
+            document.getElementById('options_sec').style.display = (type === 'fib') ? 'none' : 'block';
+        }
+    </script>
+</body>
+
+</html>

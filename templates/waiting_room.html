@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiting Room - QuizPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <style>
+        .waiting-container {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</head>
+
+<body>
+    <div class="container waiting-container">
+        <div class="card">
+            <h2>Waiting for Admin Approval</h2>
+            <p>Please wait while the administrator allows you to join the quiz.</p>
+            <div class="loader"></div>
+            <p id="status-msg">Status: Pending...</p>
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            fetch('/api/check_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'approved' || data.status === 'started') {
+                        window.location.href = "{{ url_for('quiz_page') }}";
+                    } else if (data.status === 'unauthorized') {
+                        window.location.href = "{{ url_for('participant_join') }}";
+                    }
+                });
+        }
+        // Poll every 3 seconds
+        setInterval(checkStatus, 3000);
+    </script>
+</body>
+
+</html>

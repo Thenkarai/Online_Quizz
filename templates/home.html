@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizPro - Online Quiz Competition</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</head>
+
+<body>
+    <!-- WWDC Style Ambient Background -->
+    <div class="ambient-bg">
+        <div class="ambient-shape primary"></div>
+        <div class="ambient-shape secondary"></div>
+    </div>
+    <div style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; position: relative;">
+        <div class="container animate-fade-in"
+            style="max-width: 900px; text-align: center; position: relative; z-index: 10;">
+            <div style="margin-bottom: 5rem;">
+                <h1 class="animate-fade-in delay-100"
+                    style="font-size: 4rem; margin-bottom: 1rem; background: var(--text-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    QuizPro</h1>
+                <p class="animate-fade-in delay-200"
+                    style="font-size: 1.35rem; color: var(--secondary); max-width: 550px; margin: 0 auto; font-weight: 400; letter-spacing: 0.01em;">
+                    The future of professional competitive assessments, redefined.</p>
+            </div>
+
+            <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 2.5rem;">
+                <!-- Admin Card -->
+                <div class="card card-hover"
+                    style="text-align: left; padding: 3rem; display: flex; flex-direction: column;">
+                    <div
+                        style="width: 56px; height: 56px; background: rgba(67, 56, 202, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: #4338ca;">
+                        <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                            </path>
+                        </svg>
+                    </div>
+                    <h2 style="font-size: 1.75rem; margin-bottom: 0.75rem;">Administrator</h2>
+                    <p class="text-muted" style="margin-bottom: 2.5rem; flex: 1; font-size: 1rem;">Architect
+                        competitions,
+                        curate high-stakes question banks, and monitor live performance analytics.</p>
+                    <a href="{{ url_for('admin_login') }}" class="btn btn-primary"
+                        style="box-shadow: 0 8px 16px rgba(67, 56, 202, 0.15);">Launch Dashboard</a>
+                </div>
+
+                <!-- Participant Card -->
+                <div class="card card-hover"
+                    style="text-align: left; padding: 3rem; display: flex; flex-direction: column;">
+                    <div
+                        style="width: 56px; height: 56px; background: rgba(16, 185, 129, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: #10b981;">
+                        <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122">
+                            </path>
+                        </svg>
+                    </div>
+                    <h2 style="font-size: 1.75rem; margin-bottom: 0.75rem;">Participant</h2>
+                    <p class="text-muted" style="margin-bottom: 2.5rem; flex: 1; font-size: 1rem;">Access live
+                        competitions
+                        via secure protocols and demonstrate your professional expertise.</p>
+                    <a href="{{ url_for('participant_join') }}" class="btn btn-outline" style="background: white;">Join
+                        Session</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 6rem; padding-top: 2.5rem; border-top: 1px solid rgba(0, 0, 0, 0.05);">
+                <p
+                    style="font-size: 0.8125rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+                    Institutional Grade Quiz Engine</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

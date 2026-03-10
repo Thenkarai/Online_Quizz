@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Quiz - {{ quiz.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+    <style>
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .participant-row {
+            transition: background 0.2s;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .participant-row:hover {
+            background: #f8fafc;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
+            <h1>Manage Quiz: {{ quiz.title }}</h1>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 3rem; align-items: start;">
+            <!-- Pending Participants -->
+            <div class="card" style="position: sticky; top: 2rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                    <div
+                        style="width: 12px; height: 12px; background: var(--warning); border-radius: 50%; animation: pulse 2s infinite;">
+                    </div>
+                    <h3 style="margin: 0;">Pending Approvals</h3>
+                </div>
+
+                <div id="pending-list">
+                    {% if not pending %}
+                    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <p>No students waiting</p>
+                        <small>They will appear here once they join</small>
+                    </div>
+                    {% endif %}
+                    {% for p in pending %}
+                    <div class="participant-row"
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+                        <div>
+                            <strong style="color: var(--text-main);">{{ p.name }}</strong><br>
+                            <code
+                                style="font-size: 0.75rem; color: var(--primary);">{{ p.register_number or 'No Reg #' }}</code>
+                        </div>
+                        <button class="btn btn-primary" onclick="approveParticipant({{ p.id }}, this)"
+                            style="padding: 0.5rem 1rem; font-size: 0.85rem;">Approve</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Live Leaderboard -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h3 style="margin: 0;">Live Leaderboard</h3>
+                    <span
+                        style="background: var(--success); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">LIVE
+                        UPDATES</span>
+                </div>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0 0.75rem;">
+                    <thead>
+                        <tr
+                            style="text-align: left; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <th style="padding: 0 1rem 0.5rem;">Rank</th>
+                            <th style="padding: 0 1rem 0.5rem;">Participant</th>
+                            <th style="padding: 0 1rem 0.5rem;">Score</th>
+                            <th style="padding: 0 1rem 0.5rem;">Total Time</th>
+                            <th style="padding: 0 1rem 0.5rem; text-align: center;">Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if not leaderboard %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                                Competition has not started yet</td>
+                        </tr>
+                        {% endif %}
+                        {% for p in leaderboard %}
+                        <tr
+                            style="background: {% if loop.index == 1 %}rgba(234, 179, 8, 0.1){% elif loop.index == 2 %}rgba(148, 163, 184, 0.1){% else %}transparent{% endif %}; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <td style="padding: 1.25rem 1rem; border-radius: 12px 0 0 12px;">
+                                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{%
+                                else %}{{ loop.index }}{% endif %}
+                            </td>
+                            <td style="padding: 1.25rem 1rem; font-weight: 600;">{{ p.name }}</td>
+                            <td style="padding: 1.25rem 1rem;">
+                                <span
+                                    style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 10px; font-weight: bold;">{{
+                                    p.score }} pts</span>
+                            </td>
+                            <td style="padding: 1.25rem 1rem; color: var(--text-muted);">
+                                {{ p.time_taken // 60 }}m {{ p.time_taken % 60 }}s
+                            </td>
+                            <td style="padding: 1.25rem 1rem; text-align: center; border-radius: 0 12px 12px 0;">
+                                {% if p.risk_score > 50 %}
+                                <span
+                                    style="background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 0.25rem 0.75rem; border-radius: 10px; font-weight: bold; font-size: 0.8rem;">
+                                    HIGH ({{ p.cheating_warnings }} warns)
+                                </span>
+                                {% elif p.risk_score > 0 %}
+                                <span
+                                    style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.25rem 0.75rem; border-radius: 10px; font-weight: bold; font-size: 0.8rem;">
+                                    MODERATE ({{ p.cheating_warnings }} warns)
+                                </span>
+                                {% else %}
+                                <span
+                                    style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 10px; font-weight: bold; font-size: 0.8rem;">
+                                    SAFE
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Suspicious Activity Log Section -->
+            <div class="card" style="margin-top: 3rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+                    <svg style="width: 24px; height: 24px; color: var(--danger);" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                    <h3 style="margin: 0; color: var(--danger);">Suspicious Activity Log</h3>
+                </div>
+
+                {% if not cheating_logs %}
+                <div
+                    style="text-align: center; padding: 3rem; color: var(--text-muted); background: rgba(0,0,0,0.02); border-radius: 12px;">
+                    <p style="margin: 0; font-size: 1.1rem;">No suspicious activity detected yet.</p>
+                    <small>The system is actively monitoring the examination.</small>
+                </div>
+                {% else %}
+                <div style="display: grid; gap: 1rem;">
+                    {% for log in cheating_logs %}
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--warning); border-radius: 8px;">
+                        <div>
+                            <strong style="color: var(--text-main); font-size: 1.05rem;">{{ log.name }}</strong>
+                            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                                Occurred at {{ log.timestamp }}
+                            </div>
+                        </div>
+                        <div
+                            style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold; font-size: 0.85rem; text-transform: uppercase;">
+                            {% if log.event_type == 'tab_switch' %} Tab Switched {% else %} Fullscreen Exit {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                initLivePolling(10000);
+            });
+        </script>
+</body>
+
+</html>
