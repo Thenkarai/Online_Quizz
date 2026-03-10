@@ -66,7 +66,7 @@ def admin_login():
         password = request.form['password']
         db = get_db()
         admin = db.execute("SELECT * FROM admins WHERE username = ?", (username,)).fetchone()
-        if admin and check_password_hash(admin.get('password', ''), password):
+        if admin and check_password_hash(admin['password'], password):
             session['admin_id'] = admin['id']
             return redirect(url_for('admin_dashboard'))
         flash('Invalid credentials', 'danger')
