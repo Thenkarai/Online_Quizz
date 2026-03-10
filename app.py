@@ -4,8 +4,8 @@ import random
 import string
 import json
 import qrcode
-import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
+import csv
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import io
@@ -316,12 +316,20 @@ def export_results(quiz_id):
     LEFT JOIN results r ON p.id = r.participant_id
     WHERE p.quiz_id = ?
     """
-    df = pd.read_sql_query(query, db, params=(quiz_id,))
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Results')
+    rows = db.execute(query, (quiz_id,)).fetchall()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Register Number', 'Score', 'Total Questions', 'Time Taken', 'Cheating Warnings'])
+    
+    for row in rows:
+        writer.writerow([row['name'], row['register_number'], row['score'], row['total_questions'], row['time_taken'], row['cheating_warnings']])
+    
     output.seek(0)
-    return send_file(output, as_attachment=True, download_name=f"quiz_{quiz_id}_results.xlsx")
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = f"attachment; filename=quiz_{quiz_id}_results.csv"
+    response.headers["Content-type"] = "text/csv"
+    return response
 
 @app.route('/api/cheating_log', methods=['POST'])
 def log_cheating():
@@ -347,8 +355,14 @@ def delete_quiz(quiz_id):
     db.commit()
     return redirect(url_for('admin_dashboard'))
 
-# Initialize DB at module level for Vercel WSGI
-init_db()
+@app.before_request
+def setup_db():
+    if not hasattr(app, 'db_initialized'):
+        try:
+            init_db()
+            app.db_initialized = True
+        except Exception as e:
+            print(f"Failed to initialize DB: {e}")
 
 if __name__ == '__main__':
     app.run(debug=True)
