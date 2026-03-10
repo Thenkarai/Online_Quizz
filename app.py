@@ -66,7 +66,7 @@ def admin_login():
         password = request.form['password']
         db = get_db()
         admin = db.execute("SELECT * FROM admins WHERE username = ?", (username,)).fetchone()
-        if admin and check_password_hash(admin['password'], password):
+        if admin and check_password_hash(admin.get('password', ''), password):
             session['admin_id'] = admin['id']
             return redirect(url_for('admin_dashboard'))
         flash('Invalid credentials', 'danger')
@@ -109,7 +109,11 @@ def create_quiz():
         qr.save(os.path.join(QR_DIR, f"{quiz_code}.png"))
         
         cursor = db.execute("SELECT last_insert_rowid()")
-        quiz_id = cursor.fetchone()[0]
+        row = cursor.fetchone()
+        if not row:
+            flash("Error creating quiz", "danger")
+            return redirect(url_for('admin_dashboard'))
+        quiz_id = row[0]
         return redirect(url_for('add_questions', quiz_id=quiz_id))
     return render_template('create_quiz.html')
 
@@ -119,6 +123,10 @@ def add_questions(quiz_id):
         return redirect(url_for('admin_login'))
     db = get_db()
     quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
+    if not quiz:
+        flash("Quiz not found", "danger")
+        return redirect(url_for('admin_dashboard'))
+        
     if request.method == 'POST':
         q_text = request.form['question_text']
         q_type = request.form['question_type']
@@ -143,7 +151,10 @@ def add_questions(quiz_id):
                    (quiz_id, q_text, q_type, options, correct, image_path))
         db.commit()
         
-        current_count = db.execute("SELECT COUNT(*) FROM questions WHERE quiz_id = ?", (quiz_id,)).fetchone()[0]
+        cursor = db.execute("SELECT COUNT(*) FROM questions WHERE quiz_id = ?", (quiz_id,))
+        count_row = cursor.fetchone()
+        current_count = count_row[0] if count_row else 0
+        
         if current_count >= quiz['num_questions']:
             return redirect(url_for('admin_dashboard'))
     
@@ -183,6 +194,8 @@ def check_status():
     if not p_id: return jsonify({'status': 'unauthorized'})
     db = get_db()
     participant = db.execute("SELECT status FROM participants WHERE id = ?", (p_id,)).fetchone()
+    if not participant:
+        return jsonify({'status': 'not_found'})
     return jsonify({'status': participant['status']})
 
 @app.route('/participant/quiz')
@@ -190,7 +203,11 @@ def quiz_page():
     if 'participant_id' not in session:
         return redirect(url_for('participant_join'))
     db = get_db()
-    quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (session['quiz_id'],)).fetchone()
+    quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (session.get('quiz_id'),)).fetchone()
+    if not quiz:
+        flash("Quiz not found", "danger")
+        return redirect(url_for('participant_join'))
+        
     questions = db.execute("SELECT * FROM questions WHERE quiz_id = ?", (session['quiz_id'],)).fetchall()
     
     # Check if already submitted or not yet approved
@@ -291,6 +308,10 @@ def admin_quiz_view(quiz_id):
         return redirect(url_for('admin_login'))
     db = get_db()
     quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
+    if not quiz:
+        flash("Quiz not found", "danger")
+        return redirect(url_for('admin_dashboard'))
+        
     pending = db.execute("SELECT * FROM participants WHERE quiz_id = ? AND status IN ('pending', 'joined')", (quiz_id,)).fetchall()
     
     # Leaderboard with Risk Score
