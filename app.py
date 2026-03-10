@@ -13,8 +13,8 @@ import io
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_quiz_app'
 
-# Vercel Read-Only Filesystem Fixes
-if os.environ.get('VERCEL') == '1':
+# Serverless Read-Only Filesystem Fixes (Vercel & Netlify)
+if os.environ.get('VERCEL') == '1' or os.environ.get('NETLIFY') == 'true' or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
     DATABASE = '/tmp/quiz_system.db'
     QR_DIR = '/tmp/qrcodes'
     UPLOAD_DIR = '/tmp/uploads'
