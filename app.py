@@ -43,7 +43,7 @@ def init_db():
                 db.cursor().executescript(f.read())
             # Default admin
             db.execute("INSERT INTO admins (username, password) VALUES (?, ?)",
-                       ('admin', generate_password_hash('admin123')))
+                       ('admin1@gmail.com', generate_password_hash('Admin.123')))
             db.commit()
 
 # --- Routes ---
