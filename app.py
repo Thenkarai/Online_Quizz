@@ -12,7 +12,16 @@ import io
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_quiz_app'
-DATABASE = 'quiz_system.db'
+
+# Vercel Read-Only Filesystem Fixes
+if os.environ.get('VERCEL') == '1':
+    DATABASE = '/tmp/quiz_system.db'
+    QR_DIR = '/tmp/qrcodes'
+    UPLOAD_DIR = '/tmp/uploads'
+else:
+    DATABASE = 'quiz_system.db'
+    QR_DIR = os.path.join('static', 'qrcodes')
+    UPLOAD_DIR = os.path.join('static', 'uploads')
 
 @app.template_filter('from_json')
 def from_json_filter(value):
@@ -89,10 +98,9 @@ def create_quiz():
         # Generate QR Code
         join_url = f"{request.host_url}participant/join?code={quiz_code}"
         qr = qrcode.make(join_url)
-        qr_dir = os.path.join('static', 'qrcodes')
-        if not os.path.exists(qr_dir):
-            os.makedirs(qr_dir)
-        qr.save(os.path.join(qr_dir, f"{quiz_code}.png"))
+        if not os.path.exists(QR_DIR):
+            os.makedirs(QR_DIR)
+        qr.save(os.path.join(QR_DIR, f"{quiz_code}.png"))
         
         return redirect(url_for('add_questions', quiz_id=db.execute("SELECT last_insert_rowid()").fetchone()[0]))
     return render_template('create_quiz.html')
@@ -117,11 +125,11 @@ def add_questions(quiz_id):
         if q_type == 'image':
             file = request.files['image_file']
             if file:
-                img_dir = os.path.join('static', 'uploads')
-                if not os.path.exists(img_dir):
-                    os.makedirs(img_dir)
-                image_path = f"uploads/{datetime.now().timestamp()}_{file.filename}"
-                file.save(os.path.join('static', image_path))
+                if not os.path.exists(UPLOAD_DIR):
+                    os.makedirs(UPLOAD_DIR)
+                image_filename = f"{datetime.now().timestamp()}_{file.filename}"
+                image_path = f"uploads/{image_filename}"
+                file.save(os.path.join(UPLOAD_DIR, image_filename))
         
         db.execute("INSERT INTO questions (quiz_id, question_text, question_type, options, correct_answer, image_path) VALUES (?, ?, ?, ?, ?, ?)",
                    (quiz_id, q_text, q_type, options, correct, image_path))
