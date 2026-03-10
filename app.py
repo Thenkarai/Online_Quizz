@@ -38,7 +38,8 @@ def init_db():
     if not os.path.exists(DATABASE):
         with app.app_context():
             db = get_db()
-            with open('schema.sql', 'r') as f:
+            schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+            with open(schema_path, 'r') as f:
                 db.cursor().executescript(f.read())
             # Default admin
             db.execute("INSERT INTO admins (username, password) VALUES (?, ?)",
@@ -346,6 +347,8 @@ def delete_quiz(quiz_id):
     db.commit()
     return redirect(url_for('admin_dashboard'))
 
+# Initialize DB at module level for Vercel WSGI
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
