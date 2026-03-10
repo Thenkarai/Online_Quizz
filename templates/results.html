@@ -24,6 +24,7 @@
 
     <div class="container animate-fade-in delay-100"
         style="max-width: 600px; margin-top: 80px; position: relative; z-index: 10;">
+        {% if results %}
         <div class="card"
             style="text-align: center; padding: 4rem 2rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); background: var(--surface); box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
             <div
@@ -42,7 +43,7 @@
                         stroke="var(--border)" stroke-width="2" />
                     <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
                         stroke="var(--primary)" stroke-width="2"
-                        stroke-dasharray="{{ (results.score / results.total_questions) * 100 }}, 100" />
+                        stroke-dasharray="{{ (results.score / results.total_questions) * 100 if results.total_questions > 0 else 0 }}, 100" />
                 </svg>
                 <div
                     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
@@ -62,6 +63,12 @@
                 Great job! You've successfully finished the quiz.
             </p>
         </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 4rem 2rem;">
+            <h2>No Results Found</h2>
+            <p>It seems your session has expired or the results are not yet available.</p>
+        </div>
+        {% endif %}
 
         <div style="text-align: center; margin-top: 3rem;">
             <a href="{{ url_for('index') }}" class="btn btn-outline animate-fade-in delay-300"

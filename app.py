@@ -108,7 +108,9 @@ def create_quiz():
             os.makedirs(QR_DIR)
         qr.save(os.path.join(QR_DIR, f"{quiz_code}.png"))
         
-        return redirect(url_for('add_questions', quiz_id=db.execute("SELECT last_insert_rowid()").fetchone()[0]))
+        cursor = db.execute("SELECT last_insert_rowid()")
+        quiz_id = cursor.fetchone()[0]
+        return redirect(url_for('add_questions', quiz_id=quiz_id))
     return render_template('create_quiz.html')
 
 @app.route('/admin/add_questions/<int:quiz_id>', methods=['GET', 'POST'])
@@ -193,6 +195,9 @@ def quiz_page():
     
     # Check if already submitted or not yet approved
     participant = db.execute("SELECT status FROM participants WHERE id = ?", (session['participant_id'],)).fetchone()
+    if not participant:
+        return redirect(url_for('participant_join'))
+        
     if participant['status'] in ['pending', 'joined']:
         return redirect(url_for('waiting_room'))
     if participant['status'] == 'submitted':
@@ -215,6 +220,9 @@ def submit_answer():
     ans = data['answer']
     
     question = db.execute("SELECT correct_answer FROM questions WHERE id = ?", (q_id,)).fetchone()
+    if not question:
+        return jsonify({'error': 'Question not found'}), 404
+        
     is_correct = (str(ans).strip().lower() == str(question['correct_answer']).strip().lower())
     
     db.execute("DELETE FROM answers WHERE participant_id = ? AND question_id = ?", (p_id, q_id))
@@ -231,12 +239,15 @@ def finish_quiz():
     
     db = get_db()
     p_id = session['participant_id']
-    quiz_id = session['quiz_id']
+    quiz_id = session.get('quiz_id')
+    if not quiz_id:
+        return jsonify({'error': 'Quiz session lost'}), 400
     
     # Calculate score
     score_data = db.execute("SELECT COUNT(*) FROM answers WHERE participant_id = ? AND is_correct = 1", (p_id,)).fetchone()
     score = score_data[0]
-    total = db.execute("SELECT num_questions FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()[0]
+    quiz_data = db.execute("SELECT num_questions FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
+    total = quiz_data[0] if quiz_data else 0
     
     db.execute("UPDATE participants SET status = 'submitted' WHERE id = ?", (p_id,))
     db.execute("INSERT INTO results (participant_id, score, total_questions, time_taken, cheating_warnings) VALUES (?, ?, ?, ?, ?)",
@@ -262,13 +273,15 @@ def results():
     res = db.execute("SELECT * FROM results WHERE participant_id = ?", (session['participant_id'],)).fetchone()
     
     # Leaderboard
-    leaderboard = db.execute("""
-        SELECT p.name, r.score, r.time_taken 
-        FROM results r 
-        JOIN participants p ON r.participant_id = p.id 
-        WHERE p.quiz_id = ?
-        ORDER BY r.score DESC, r.time_taken ASC
-    """, (session['quiz_id'],)).fetchall()
+    leaderboard = []
+    if session.get('quiz_id'):
+        leaderboard = db.execute("""
+            SELECT p.name, r.score, r.time_taken 
+            FROM results r 
+            JOIN participants p ON r.participant_id = p.id 
+            WHERE p.quiz_id = ?
+            ORDER BY r.score DESC, r.time_taken ASC
+        """, (session['quiz_id'],)).fetchall()
     
     return render_template('results.html', results=res) # Removed leaderboard for participants
 
@@ -369,6 +382,13 @@ def setup_db():
         except Exception as e:
             # On serverless (Vercel), log error but don't crash the whole app if possible
             app.logger.error(f"Failed to initialize DB: {e}")
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error
+    app.logger.error(f"Server Error: {e}")
+    # Return 500 but with more info if in debug or just a cleaner message
+    return f"Internal Server Error: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
