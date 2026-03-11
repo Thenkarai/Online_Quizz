@@ -1,10 +1,11 @@
 import os
-import sqlite3
 import random
 import string
 import json
 import qrcode
 import csv
+import psycopg2
+from psycopg2.extras import DictCursor
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -13,13 +14,12 @@ import io
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_for_quiz_app'
 
-# Serverless Read-Only Filesystem Fixes (Vercel & Netlify)
+# Postgres / Supabase Configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
 if os.environ.get('VERCEL') == '1' or os.environ.get('NETLIFY') == 'true' or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
-    DATABASE = '/tmp/quiz_system.db'
     QR_DIR = '/tmp/qrcodes'
     UPLOAD_DIR = '/tmp/uploads'
 else:
-    DATABASE = 'quiz_system.db'
     QR_DIR = os.path.join('static', 'qrcodes')
     UPLOAD_DIR = os.path.join('static', 'uploads')
 
@@ -34,22 +34,47 @@ def from_json_filter(value):
 
 # --- Database Helpers ---
 
+class DBWrapper:
+    def __init__(self, conn):
+        self.conn = conn
+    
+    def execute(self, query, params=None):
+        cur = self.conn.cursor()
+        # Automatically convert local SQLite placeholder ? to Postgres %s
+        pg_query = query.replace('?', '%s')
+        cur.execute(pg_query, params)
+        return cur
+    
+    def commit(self):
+        self.conn.commit()
+    
+    def close(self):
+        self.conn.close()
+
 def get_db():
-    db = sqlite3.connect(DATABASE)
-    db.row_factory = sqlite3.Row
-    return db
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL environment variable is not set! Please add your Supabase connection string to the Vercel Environment Variables.")
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+    return DBWrapper(conn)
 
 def init_db():
-    if not os.path.exists(DATABASE):
+    if not DATABASE_URL:
+        return
+    try:
         with app.app_context():
             db = get_db()
             schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
             with open(schema_path, 'r') as f:
-                db.cursor().executescript(f.read())
+                db.execute(f.read())
+            
             # Default admin
-            db.execute("INSERT INTO admins (username, password) VALUES (?, ?)",
-                       ('admin1@gmail.com', generate_password_hash('Admin.123')))
+            admin = db.execute("SELECT * FROM admins WHERE username = 'admin1@gmail.com'").fetchone()
+            if not admin:
+                db.execute("INSERT INTO admins (username, password) VALUES (?, ?)",
+                           ('admin1@gmail.com', generate_password_hash('Admin.123')))
             db.commit()
+    except Exception as e:
+        app.logger.warning(f"Database Init Issue: {e}")
 
 # --- Routes ---
 
@@ -83,7 +108,7 @@ def admin_dashboard():
         return redirect(url_for('admin_login'))
     db = get_db()
     quizzes = db.execute("SELECT * FROM quizzes ORDER BY id DESC").fetchall()
-    env_warning = os.environ.get('VERCEL') == '1' or os.environ.get('NETLIFY') == 'true'
+    env_warning = False # Removed warning since SQL is permanent now
     return render_template('admin_dashboard.html', quizzes=quizzes, env_warning=env_warning)
 
 @app.route('/admin/create_quiz', methods=['GET', 'POST'])
@@ -98,8 +123,13 @@ def create_quiz():
         quiz_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
         db = get_db()
-        db.execute("INSERT INTO quizzes (title, duration, num_questions, quiz_code, time_per_question, admin_id) VALUES (?, ?, ?, ?, ?, ?)",
+        cur = db.execute("INSERT INTO quizzes (title, duration, num_questions, quiz_code, time_per_question, admin_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
                    (title, duration, num_questions, quiz_code, time_per_q, session['admin_id']))
+        row = cur.fetchone()
+        if not row:
+            flash("Error creating quiz", "danger")
+            return redirect(url_for('admin_dashboard'))
+        quiz_id = row[0]
         db.commit()
         
         # Generate QR Code
@@ -109,12 +139,6 @@ def create_quiz():
             os.makedirs(QR_DIR)
         qr.save(os.path.join(QR_DIR, f"{quiz_code}.png"))
         
-        cursor = db.execute("SELECT last_insert_rowid()")
-        row = cursor.fetchone()
-        if not row:
-            flash("Error creating quiz", "danger")
-            return redirect(url_for('admin_dashboard'))
-        quiz_id = row[0]
         return redirect(url_for('add_questions', quiz_id=quiz_id))
     return render_template('create_quiz.html')
 
@@ -175,10 +199,10 @@ def participant_join():
         db = get_db()
         quiz = db.execute("SELECT * FROM quizzes WHERE quiz_code = ?", (quiz_code.upper(),)).fetchone()
         if quiz:
-            cursor = db.execute("INSERT INTO participants (name, register_number, quiz_id, status) VALUES (?, ?, ?, 'pending')",
+            cur = db.execute("INSERT INTO participants (name, register_number, quiz_id, status) VALUES (?, ?, ?, 'pending') RETURNING id",
                        (name, reg_num, quiz['id']))
+            session['participant_id'] = cur.fetchone()[0]
             db.commit()
-            session['participant_id'] = cursor.lastrowid
             session['quiz_id'] = quiz['id']
             return redirect(url_for('waiting_room'))
         flash('Invalid Quiz Code', 'danger')
@@ -263,7 +287,7 @@ def finish_quiz():
         return jsonify({'error': 'Quiz session lost'}), 400
     
     # Calculate score
-    score_data = db.execute("SELECT COUNT(*) FROM answers WHERE participant_id = ? AND is_correct = 1", (p_id,)).fetchone()
+    score_data = db.execute("SELECT COUNT(*) FROM answers WHERE participant_id = ? AND is_correct = TRUE", (p_id,)).fetchone()
     score = score_data[0]
     quiz_data = db.execute("SELECT num_questions FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
     total = quiz_data[0] if quiz_data else 0

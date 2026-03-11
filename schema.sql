@@ -1,46 +1,46 @@
--- Schema for Professional Online Quiz Competition System
+-- Schema for Professional Online Quiz Competition System (PostgreSQL)
 
 CREATE TABLE IF NOT EXISTS admins (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS quizzes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
-    duration INTEGER NOT NULL, -- in minutes
+    duration INTEGER NOT NULL,
     num_questions INTEGER NOT NULL,
-    quiz_code TEXT UNIQUE NOT NULL,
-    time_per_question INTEGER DEFAULT 30, -- in seconds
+    quiz_code VARCHAR(20) UNIQUE NOT NULL,
+    time_per_question INTEGER DEFAULT 30,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     admin_id INTEGER,
     FOREIGN KEY (admin_id) REFERENCES admins (id)
 );
 
 CREATE TABLE IF NOT EXISTS questions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     quiz_id INTEGER,
     question_text TEXT NOT NULL,
-    question_type TEXT NOT NULL, -- 'mcq', 'fib', 'image'
-    options TEXT, -- JSON string for options in MCQ/Image
+    question_type VARCHAR(50) NOT NULL,
+    options TEXT,
     correct_answer TEXT NOT NULL,
     image_path TEXT,
     FOREIGN KEY (quiz_id) REFERENCES quizzes (id)
 );
 
 CREATE TABLE IF NOT EXISTS participants (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     register_number TEXT,
     quiz_id INTEGER,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'started', 'submitted'
+    status VARCHAR(50) DEFAULT 'pending',
     FOREIGN KEY (quiz_id) REFERENCES quizzes (id)
 );
 
 CREATE TABLE IF NOT EXISTS answers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     participant_id INTEGER,
     question_id INTEGER,
     submitted_answer TEXT,
@@ -50,20 +50,20 @@ CREATE TABLE IF NOT EXISTS answers (
 );
 
 CREATE TABLE IF NOT EXISTS results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     participant_id INTEGER,
     score INTEGER,
     total_questions INTEGER,
-    time_taken INTEGER, -- in seconds
+    time_taken INTEGER,
     cheating_warnings INTEGER DEFAULT 0,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (participant_id) REFERENCES participants (id)
 );
 
 CREATE TABLE IF NOT EXISTS cheating_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     participant_id INTEGER,
-    event_type TEXT, -- 'tab_switch', 'fullscreen_exit', 'ai_flag'
+    event_type VARCHAR(100),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (participant_id) REFERENCES participants (id)
 );
