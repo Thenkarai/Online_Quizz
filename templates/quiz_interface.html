@@ -350,7 +350,12 @@
         let currentQ = 0;
         let totalQ = parseInt("{{ questions|length }}");
         let responses = {};
-        let timePerQuestion = parseInt("{{ quiz.time_per_question }}");
+
+        // Parse timePerQuestion safely, defaulting to 30, with a floor of 5
+        let parsedTime = parseInt("{{ quiz.time_per_question }}");
+        if (isNaN(parsedTime) || parsedTime < 5) parsedTime = 30; // Fallback if still invalid
+        let timePerQuestion = parsedTime;
+
         let timeLeft = timePerQuestion;
         let warnings = 0;
         let quizFinished = false;

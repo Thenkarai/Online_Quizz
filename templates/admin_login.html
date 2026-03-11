@@ -38,16 +38,16 @@
             {% endif %}
             {% endwith %}
 
-            <form method="POST">
+            <form method="POST" autocomplete="off">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label style="margin-bottom: 0.5rem; display: block;">Username</label>
-                    <input type="text" name="username" id="username" required autocomplete="username"
+                    <input type="text" name="username" id="username" required autocomplete="off"
                         placeholder="Enter email"
                         style="width: 100%; padding: 0.875rem 1rem; border-radius: 12px; outline: none; background: var(--surface); color: var(--text-main); border: 1px solid var(--border); transition: border-color 0.2s;">
                 </div>
                 <div class="form-group" style="margin-bottom: 2.5rem;">
                     <label style="margin-bottom: 0.5rem; display: block;">Password</label>
-                    <input type="password" name="password" id="password" required autocomplete="current-password"
+                    <input type="password" name="password" id="password" required autocomplete="new-password"
                         placeholder="Your password"
                         style="width: 100%; padding: 0.875rem 1rem; border-radius: 12px; outline: none; background: var(--surface); color: var(--text-main); border: 1px solid var(--border); transition: border-color 0.2s;">
                 </div>
@@ -63,6 +63,17 @@
             </div>
         </div>
     </div>
+    <script>
+        // Force clear fields on load to defeat aggressive browser auto-fill
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                var userField = document.getElementById('username');
+                var passField = document.getElementById('password');
+                if (userField && !userField.value) userField.value = '';
+                if (passField) passField.value = '';
+            }, 50);
+        });
+    </script>
 </body>
 
 </html>

@@ -91,6 +91,18 @@
         </div>
         {% endif %}
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom: 3rem;">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}"
+                style="font-size: 0.875rem; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); background: var(--surface);">
+                {{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
         <!-- Stats Overview -->
         <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 4rem; gap: 2rem;">
             <div class="card" style="padding: 2rem;">

@@ -94,7 +94,14 @@ def create_quiz():
         title = request.form['title']
         duration = request.form['duration']
         num_questions = request.form['num_questions']
-        time_per_q = request.form.get('time_per_question', 30)
+        
+        try:
+            time_per_q = int(request.form.get('time_per_question', 30))
+            if time_per_q < 5:
+                time_per_q = 5
+        except ValueError:
+            time_per_q = 30
+            
         quiz_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
         db = get_db()
