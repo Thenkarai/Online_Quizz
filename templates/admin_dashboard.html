@@ -66,6 +66,31 @@
             </a>
         </div>
 
+        {% if env_warning %}
+        <div
+            style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 12px; padding: 1.5rem; margin-bottom: 3rem; display: flex; gap: 1rem; align-items: flex-start;">
+            <svg style="width: 24px; height: 24px; color: var(--danger); flex-shrink: 0;" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                </path>
+            </svg>
+            <div>
+                <strong style="color: var(--danger); display: block; margin-bottom: 0.25rem;">Scale Warning: Transient
+                    Database Detected</strong>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+                    You are currently using <strong>SQLite on Vercel</strong>. Because Vercel is serverless, your
+                    database is reset and not shared between users.
+                    Participants may see "Invalid Quiz Code" even if the quiz exists. For a production-ready site,
+                    please migrate to
+                    <a href="https://vercel.com/docs/storage/vercel-postgres" target="_blank"
+                        style="color: var(--primary-light);">Vercel Postgres</a> or
+                    <a href="https://supabase.com" target="_blank" style="color: var(--primary-light);">Supabase</a>.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Stats Overview -->
         <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 4rem; gap: 2rem;">
             <div class="card" style="padding: 2rem;">

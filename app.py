@@ -82,8 +82,9 @@ def admin_dashboard():
     if 'admin_id' not in session:
         return redirect(url_for('admin_login'))
     db = get_db()
-    quizzes = db.execute("SELECT * FROM quizzes ORDER BY created_at DESC").fetchall()
-    return render_template('admin_dashboard.html', quizzes=quizzes)
+    quizzes = db.execute("SELECT * FROM quizzes ORDER BY id DESC").fetchall()
+    env_warning = os.environ.get('VERCEL') == '1' or os.environ.get('NETLIFY') == 'true'
+    return render_template('admin_dashboard.html', quizzes=quizzes, env_warning=env_warning)
 
 @app.route('/admin/create_quiz', methods=['GET', 'POST'])
 def create_quiz():
@@ -300,7 +301,7 @@ def results():
             ORDER BY r.score DESC, r.time_taken ASC
         """, (session['quiz_id'],)).fetchall()
     
-    return render_template('results.html', results=res) # Removed leaderboard for participants
+    return render_template('results.html', results=res)
 
 @app.route('/admin/quiz_view/<int:quiz_id>')
 def admin_quiz_view(quiz_id):
@@ -313,6 +314,7 @@ def admin_quiz_view(quiz_id):
         return redirect(url_for('admin_dashboard'))
         
     pending = db.execute("SELECT * FROM participants WHERE quiz_id = ? AND status IN ('pending', 'joined')", (quiz_id,)).fetchall()
+    questions = db.execute("SELECT * FROM questions WHERE quiz_id = ?", (quiz_id,)).fetchall()
     
     # Leaderboard with Risk Score
     leaderboard = db.execute("""
@@ -334,7 +336,16 @@ def admin_quiz_view(quiz_id):
         LIMIT 20
     """, (quiz_id,)).fetchall()
     
-    return render_template('admin_quiz_view.html', quiz=quiz, pending=pending, leaderboard=leaderboard, cheating_logs=cheating_logs)
+    return render_template('admin_quiz_view.html', quiz=quiz, pending=pending, leaderboard=leaderboard, cheating_logs=cheating_logs, questions=questions)
+
+@app.route('/api/delete_question/<int:q_id>', methods=['POST'])
+def delete_question(q_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    db = get_db()
+    db.execute("DELETE FROM questions WHERE id = ?", (q_id,))
+    db.commit()
+    return jsonify({'success': True})
 
 @app.route('/api/approve_participant/<int:p_id>', methods=['POST'])
 def approve_participant(p_id):

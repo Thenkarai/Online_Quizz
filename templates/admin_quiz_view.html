@@ -145,6 +145,60 @@
                 </table>
             </div>
 
+            <!-- Question Curriculum Section -->
+            <div class="card" style="margin-top: 3rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <svg style="width: 24px; height: 24px; color: var(--primary);" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        <h3 style="margin: 0;">Question Curriculum</h3>
+                    </div>
+                    <a href="{{ url_for('add_questions', quiz_id=quiz.id) }}" class="btn btn-primary"
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;">+ Add Question</a>
+                </div>
+
+                <div id="question-list">
+                    {% if not questions %}
+                    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <p>No questions added yet</p>
+                    </div>
+                    {% endif %}
+                    {% for q in questions %}
+                    <div class="participant-row"
+                        style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1.25rem;">
+                        <div style="flex: 1; padding-right: 2rem;">
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                                <span class="badge"
+                                    style="font-size: 0.7rem; background: rgba(67, 56, 202, 0.1); color: var(--primary);">{{
+                                    q.question_type|upper }}</span>
+                                <strong style="color: var(--text-main);">Question {{ loop.index }}</strong>
+                            </div>
+                            <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">{{ q.question_text }}
+                            </p>
+                            {% if q.question_type != 'fib' %}
+                            <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                                <strong>Answer:</strong> {{ q.correct_answer }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-outline" onclick="deleteQuestion({{ q.id }}, this)"
+                            style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); padding: 0.5rem 0.75rem;">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
             <!-- Suspicious Activity Log Section -->
             <div class="card" style="margin-top: 3rem;">
                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">

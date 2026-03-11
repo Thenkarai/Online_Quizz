@@ -38,19 +38,35 @@
 
                 <div id="options_sec">
                     <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <input type="text" name="opt1" placeholder="Option 1">
-                        <input type="text" name="opt2" placeholder="Option 2">
-                        <input type="text" name="opt3" placeholder="Option 3">
-                        <input type="text" name="opt4" placeholder="Option 4">
+                        <input type="text" name="opt1" id="opt1" placeholder="Option 1">
+                        <input type="text" name="opt2" id="opt2" placeholder="Option 2">
+                        <input type="text" name="opt3" id="opt3" placeholder="Option 3">
+                        <input type="text" name="opt4" id="opt4" placeholder="Option 4">
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-top: 1rem;">
                     <label>Correct Answer</label>
-                    <input type="text" name="correct_answer" placeholder="Enter correct option/text" required>
+                    <div id="correct_ans_container">
+                        <input type="text" name="correct_answer" id="correct_answer_text"
+                            placeholder="Enter correct option/text" required>
+                        <select name="correct_answer_select" id="correct_answer_select" style="display: none;">
+                            <option value="">Select Correct Option</option>
+                            <option value="Option 1">Option 1</option>
+                            <option value="Option 2">Option 2</option>
+                            <option value="Option 3">Option 3</option>
+                            <option value="Option 4">Option 4</option>
+                        </select>
+                    </div>
+                    <small id="ans_hint" style="color: var(--text-muted);">For MCQ, select the correct option from the
+                        dropdown.</small>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Question & Continue</button>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Add Question & Continue</button>
+                    <a href="{{ url_for('admin_quiz_view', quiz_id=quiz.id) }}" class="btn btn-outline"
+                        style="flex: 1; text-align: center;">Finish</a>
+                </div>
             </form>
         </div>
     </div>
@@ -58,9 +74,45 @@
     <script>
         function toggleFields() {
             const type = document.getElementById('q_type').value;
+            const isMCQ = (type === 'mcq' || type === 'image');
+
             document.getElementById('image_upload').style.display = (type === 'image') ? 'block' : 'none';
-            document.getElementById('options_sec').style.display = (type === 'fib') ? 'none' : 'block';
+            document.getElementById('options_sec').style.display = isMCQ ? 'block' : 'none';
+
+            // Toggle correct answer input type
+            const textInput = document.getElementById('correct_answer_text');
+            const selectInput = document.getElementById('correct_answer_select');
+
+            if (isMCQ) {
+                textInput.style.display = 'none';
+                textInput.required = false;
+                selectInput.style.display = 'block';
+                selectInput.required = true;
+                document.getElementById('ans_hint').innerText = "Select which option is correct.";
+            } else {
+                textInput.style.display = 'block';
+                textInput.required = true;
+                selectInput.style.display = 'none';
+                selectInput.required = false;
+                document.getElementById('ans_hint').innerText = "Type the exact correct answer.";
+            }
         }
+
+        // Sync selective value to main correct_answer name before submit
+        document.querySelector('form').onsubmit = function () {
+            const type = document.getElementById('q_type').value;
+            if (type === 'mcq' || type === 'image') {
+                const sel = document.getElementById('correct_answer_select');
+                const optIdx = sel.selectedIndex; // 1-based since first is placeholder
+                if (optIdx > 0) {
+                    const optVal = document.getElementById('opt' + optIdx).value;
+                    document.getElementById('correct_answer_text').value = optVal;
+                }
+            }
+        };
+
+        // Initial run
+        window.onload = toggleFields;
     </script>
 </body>
 
