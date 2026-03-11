@@ -126,7 +126,9 @@ def add_questions(quiz_id):
     quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
     if not quiz:
         flash("Quiz not found", "danger")
-        return redirect(url_for('admin_dashboard'))
+        if 'admin_id' in session:
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_login'))
         
     if request.method == 'POST':
         q_text = request.form['question_text']
@@ -192,7 +194,9 @@ def waiting_room():
 @app.route('/api/check_status')
 def check_status():
     p_id = session.get('participant_id')
-    if not p_id: return jsonify({'status': 'unauthorized'})
+    if not p_id: 
+        app.logger.warning(f"Participant status check failed: Session missing. Host: {request.host}")
+        return jsonify({'status': 'unauthorized'})
     db = get_db()
     participant = db.execute("SELECT status FROM participants WHERE id = ?", (p_id,)).fetchone()
     if not participant:
@@ -311,7 +315,9 @@ def admin_quiz_view(quiz_id):
     quiz = db.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,)).fetchone()
     if not quiz:
         flash("Quiz not found", "danger")
-        return redirect(url_for('admin_dashboard'))
+        if 'admin_id' in session:
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_login'))
         
     pending = db.execute("SELECT * FROM participants WHERE quiz_id = ? AND status IN ('pending', 'joined')", (quiz_id,)).fetchall()
     questions = db.execute("SELECT * FROM questions WHERE quiz_id = ?", (quiz_id,)).fetchall()

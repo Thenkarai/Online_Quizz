@@ -359,58 +359,66 @@
 
         // Timer Logic
         const timerInterval = setInterval(() => {
-            if (quizFinished) return;
+            if (quizFinished) {
+                clearInterval(timerInterval);
+                return;
+            }
+            if (totalQ === 0) return;
+
             let mins = Math.floor(timeLeft / 60);
             let secs = timeLeft % 60;
-            // The format is generic enough for time <= 60s we can just show seconds
-            document.getElementById('timer-box').innerText = `${secs.toString().padStart(2, '0')}`;
+            const timerBox = document.getElementById('timer-box');
+            if (timerBox) timerBox.innerText = `${secs.toString().padStart(2, '0')}`;
 
-            // 2 * pi * r = 2 * 3.14159 * 16 ≈ 100.53 (circumference)
             const circumference = 100.53;
-            const dashoffset = circumference - (timeLeft / timePerQuestion) * circumference;
+            const dashoffset = circumference - (Math.max(0, timeLeft) / timePerQuestion) * circumference;
             const svgProg = document.getElementById('timer-prog-svg');
 
             if (svgProg) {
                 svgProg.style.strokeDashoffset = dashoffset;
                 if (timeLeft <= 10) {
                     svgProg.style.stroke = "var(--danger)";
-                    document.getElementById('timer-box').style.color = "var(--danger)";
+                    if (timerBox) timerBox.style.color = "var(--danger)";
                 } else {
                     svgProg.style.stroke = "var(--primary-light)";
-                    document.getElementById('timer-box').style.color = "var(--text-main)";
+                    if (timerBox) timerBox.style.color = "var(--text-main)";
                 }
             }
 
             if (timeLeft <= 0) {
-                // Auto-save current answer if any (e.g. FIB)
                 const currentCard = document.getElementById(`q-${currentQ}`);
-                const fibInput = currentCard.querySelector('.fib-answer');
-                if (fibInput && fibInput.value) {
-                    saveFibAnswer(currentCard.dataset.qid, fibInput.value);
+                if (currentCard) {
+                    const fibInput = currentCard.querySelector('.fib-answer');
+                    if (fibInput && fibInput.value) {
+                        saveFibAnswer(currentCard.dataset.qid, fibInput.value);
+                    }
                 }
 
                 if (currentQ < totalQ - 1) {
                     nextQuestion();
-                } else {
-                    clearInterval(timerInterval);
+                } else if (!quizFinished) {
                     finishQuiz();
                 }
+            } else {
+                timeLeft--;
             }
-            timeLeft--;
         }, 1000);
 
         function showQuestion(index) {
-            document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`q-${index}`).classList.add('active');
+            if (index < 0 || index >= totalQ) return;
 
-            // Per-question timer reset
+            document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+            const nextCard = document.getElementById(`q-${index}`);
+            if (nextCard) nextCard.classList.add('active');
+
+            // Per-question timer reset - using a slight buffer to prevent immediate expiration
             timeLeft = timePerQuestion;
 
             // Progress bar update
             const progress = ((index + 1) / totalQ) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
 
-            // Updated buttons for strict forward-only flow with per-question timer
+            // Updated buttons for strict forward-only flow
             document.getElementById('prev-btn').style.visibility = 'hidden';
             document.getElementById('next-btn').style.display = (index === totalQ - 1) ? 'none' : 'inline-flex';
             document.getElementById('submit-section').style.display = (index === totalQ - 1) ? 'inline-block' : 'none';
