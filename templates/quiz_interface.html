@@ -350,12 +350,7 @@
         let currentQ = 0;
         let totalQ = parseInt("{{ questions|length }}");
         let responses = {};
-
-        // Parse timePerQuestion safely, defaulting to 30, with a floor of 5
-        let parsedTime = parseInt("{{ quiz.time_per_question }}");
-        if (isNaN(parsedTime) || parsedTime < 5) parsedTime = 30; // Fallback if still invalid
-        let timePerQuestion = parsedTime;
-
+        let timePerQuestion = parseInt("{{ quiz.time_per_question }}");
         let timeLeft = timePerQuestion;
         let warnings = 0;
         let quizFinished = false;
@@ -364,66 +359,58 @@
 
         // Timer Logic
         const timerInterval = setInterval(() => {
-            if (quizFinished) {
-                clearInterval(timerInterval);
-                return;
-            }
-            if (totalQ === 0) return;
-
+            if (quizFinished) return;
             let mins = Math.floor(timeLeft / 60);
             let secs = timeLeft % 60;
-            const timerBox = document.getElementById('timer-box');
-            if (timerBox) timerBox.innerText = `${secs.toString().padStart(2, '0')}`;
+            // The format is generic enough for time <= 60s we can just show seconds
+            document.getElementById('timer-box').innerText = `${secs.toString().padStart(2, '0')}`;
 
+            // 2 * pi * r = 2 * 3.14159 * 16 ≈ 100.53 (circumference)
             const circumference = 100.53;
-            const dashoffset = circumference - (Math.max(0, timeLeft) / timePerQuestion) * circumference;
+            const dashoffset = circumference - (timeLeft / timePerQuestion) * circumference;
             const svgProg = document.getElementById('timer-prog-svg');
 
             if (svgProg) {
                 svgProg.style.strokeDashoffset = dashoffset;
                 if (timeLeft <= 10) {
                     svgProg.style.stroke = "var(--danger)";
-                    if (timerBox) timerBox.style.color = "var(--danger)";
+                    document.getElementById('timer-box').style.color = "var(--danger)";
                 } else {
                     svgProg.style.stroke = "var(--primary-light)";
-                    if (timerBox) timerBox.style.color = "var(--text-main)";
+                    document.getElementById('timer-box').style.color = "var(--text-main)";
                 }
             }
 
             if (timeLeft <= 0) {
+                // Auto-save current answer if any (e.g. FIB)
                 const currentCard = document.getElementById(`q-${currentQ}`);
-                if (currentCard) {
-                    const fibInput = currentCard.querySelector('.fib-answer');
-                    if (fibInput && fibInput.value) {
-                        saveFibAnswer(currentCard.dataset.qid, fibInput.value);
-                    }
+                const fibInput = currentCard.querySelector('.fib-answer');
+                if (fibInput && fibInput.value) {
+                    saveFibAnswer(currentCard.dataset.qid, fibInput.value);
                 }
 
                 if (currentQ < totalQ - 1) {
                     nextQuestion();
-                } else if (!quizFinished) {
+                } else {
+                    clearInterval(timerInterval);
                     finishQuiz();
                 }
-            } else {
-                timeLeft--;
             }
+            timeLeft--;
         }, 1000);
 
         function showQuestion(index) {
-            if (index < 0 || index >= totalQ) return;
-
             document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
-            const nextCard = document.getElementById(`q-${index}`);
-            if (nextCard) nextCard.classList.add('active');
+            document.getElementById(`q-${index}`).classList.add('active');
 
-            // Per-question timer reset - using a slight buffer to prevent immediate expiration
+            // Per-question timer reset
             timeLeft = timePerQuestion;
 
             // Progress bar update
             const progress = ((index + 1) / totalQ) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
 
-            // Updated buttons for strict forward-only flow
+            // Updated buttons for strict forward-only flow with per-question timer
             document.getElementById('prev-btn').style.visibility = 'hidden';
             document.getElementById('next-btn').style.display = (index === totalQ - 1) ? 'none' : 'inline-flex';
             document.getElementById('submit-section').style.display = (index === totalQ - 1) ? 'inline-block' : 'none';

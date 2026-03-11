@@ -66,6 +66,17 @@
             </a>
         </div>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}"
+            style="font-size: 0.95rem; padding: 1.25rem; margin-bottom: 2rem; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.2);">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
         {% if env_warning %}
         <div
             style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 12px; padding: 1.5rem; margin-bottom: 3rem; display: flex; gap: 1rem; align-items: flex-start;">
@@ -90,18 +101,6 @@
             </div>
         </div>
         {% endif %}
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div style="margin-bottom: 3rem;">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }}"
-                style="font-size: 0.875rem; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(239, 68, 68, 0.2); background: var(--surface);">
-                {{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
 
         <!-- Stats Overview -->
         <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 4rem; gap: 2rem;">

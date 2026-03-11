@@ -14,8 +14,14 @@
 <body>
     <div class="container">
         <div class="card">
-            <h2>Add Question to: {{ quiz.title }}</h2>
-            <p>Target Questions: {{ quiz.num_questions }}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0;">Add Question to: {{ quiz.title }}</h2>
+                <span class="badge"
+                    style="background: rgba(67, 56, 202, 0.1); color: var(--primary); font-size: 0.9rem; padding: 0.5rem 1rem;">
+                    Added: {{ current_count }} / {{ quiz.num_questions }}
+                </span>
+            </div>
+
             <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Question Type</label>
@@ -62,10 +68,17 @@
                         dropdown.</small>
                 </div>
 
-                <div class="flex gap-4">
+                <div class="flex gap-4" style="margin-top: 2rem;">
                     <button type="submit" class="btn btn-primary" style="flex: 2;">Add Question & Continue</button>
-                    <a href="{{ url_for('admin_quiz_view', quiz_id=quiz.id) }}" class="btn btn-outline"
-                        style="flex: 1; text-align: center;">Finish</a>
+                    {% if current_count >= quiz.num_questions %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-success"
+                        style="flex: 1; text-align: center; background: var(--success);">Finish Quiz</a>
+                    {% else %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline"
+                        style="flex: 1; text-align: center; color: var(--danger); border-color: rgba(239, 68, 68, 0.2);"
+                        onclick="return confirm('You have only added {{ current_count }} of {{ quiz.num_questions }} questions. If you finish early, the quiz will be shorter than planned. Continue?');">Finish
+                        Early</a>
+                    {% endif %}
                 </div>
             </form>
         </div>
